@@ -14,7 +14,6 @@ html,body{
   background:linear-gradient(135deg,#f7a7a7,#fbd3d3);
 }
 
-/* 音乐解锁按钮 */
 #soundUnlock{
   position:fixed;
   bottom:30px;
@@ -31,7 +30,6 @@ html,body{
 
 canvas{position:absolute;top:0;left:0;}
 
-/* 页面样式 */
 .page{
   position:absolute;
   width:100%;height:100%;
@@ -53,7 +51,7 @@ input,button{
 
 button{cursor:pointer}
 
-/* 邮件图标 */
+/* ===== 邮件图标 ===== */
 #mailIcon{
   background:#fff;
   color:#333;
@@ -74,7 +72,7 @@ button{cursor:pointer}
   to{transform:scale(1);opacity:1}
 }
 
-/* 邮件窗口 */
+/* ===== 邮件窗口 ===== */
 #mailWindow{
   background:#fff;
   color:#333;
@@ -98,19 +96,9 @@ button{cursor:pointer}
   background:#f7a7a7;
   color:#fff;
   border-radius:20px;
-  padding:10px 20px;
+  padding:10px 24px;
+  border:none;
   cursor:pointer;
-}
-
-/* 粒子文字 */
-.dot-text{
-  font-size:80px;
-  letter-spacing:8px;
-  font-weight:300;
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%, -50%);
 }
 </style>
 </head>
@@ -119,9 +107,8 @@ button{cursor:pointer}
 
 <canvas id="canvas"></canvas>
 
-<!-- 音乐 -->
 <audio id="ding">
-  <source src="https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3" type="audio/mpeg">
 </audio>
 
 <audio id="bgm" loop>
@@ -130,19 +117,17 @@ button{cursor:pointer}
 
 <div id="soundUnlock">🔊 点我开启声音</div>
 
-<!-- 页面 1 -->
+<!-- Page 1 -->
 <div class="page" id="page1">
   <h2>生日快乐</h2>
   <input id="nameInput" placeholder="输入名字"><br><br>
   <button onclick="start()">进入</button>
 </div>
 
-<!-- 页面 2~8 -->
-<div class="page hidden" id="page2">
-  <div class="dot-text" id="dotText"></div>
-</div>
+<!-- Page 2 (粒子文字) -->
+<div class="page hidden" id="page2"></div>
 
-<!-- 邮件页面 9~15 -->
+<!-- 邮件页 9~15 -->
 <div class="page hidden" id="mailPage">
   <div id="mailIcon" onclick="openMail()">
     <div class="title">📩 你有邮件可查收</div>
@@ -158,13 +143,12 @@ button{cursor:pointer}
 </div>
 
 <script>
-// Canvas 背景方块
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// ===== Canvas 方块 =====
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth; canvas.height=innerHeight;
 
-let squares = [], showSquares = true;
+let squares=[],showSquares=true;
 function createSquares(n=15){
   squares=[];
   for(let i=0;i<n;i++){
@@ -173,9 +157,9 @@ function createSquares(n=15){
       y:Math.random()*canvas.height,
       size:30+Math.random()*60,
       angle:Math.random()*Math.PI,
-      rotate:(Math.random()-0.5)*0.05,
-      speed:(Math.random()-0.5)*0.2,
-      alpha:0.2+Math.random()*0.3
+      rotate:(Math.random()-.5)*.05,
+      speed:(Math.random()-.5)*.2,
+      alpha:.2+Math.random()*.3
     });
   }
 }
@@ -194,18 +178,23 @@ function drawSquares(){
   });
 }
 
-// 粒子文字
+// ===== 粒子文字 =====
 let particles=[];
 function createParticles(text){
   particles=[];
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.font="bold 150px Arial";
-  ctx.fillText(text,(canvas.width-ctx.measureText(text).width)/2,canvas.height/2);
-  let data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-  for(let y=0;y<canvas.height;y+=6){
-    for(let x=0;x<canvas.width;x+=6){
-      if(data[(y*canvas.width+x)*4+3]>150){
-        particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,tx:x,ty:y});
+  let fontSize = 120;
+  if(text.length>5) fontSize = 90;
+  ctx.font=`bold ${fontSize}px Arial`;
+  const x=(canvas.width-ctx.measureText(text).width)/2;
+  const y=canvas.height/2;
+  ctx.fillText(text,x,y);
+
+  const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  for(let py=0;py<canvas.height;py+=6){
+    for(let px=0;px<canvas.width;px+=6){
+      if(data[(py*canvas.width+px)*4+3]>150){
+        particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,tx:px,ty:py});
       }
     }
   }
@@ -213,17 +202,17 @@ function createParticles(text){
 
 function animate(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(showSquares)drawSquares();
+  if(showSquares) drawSquares();
   particles.forEach(p=>{
-    p.x+=(p.tx-p.x)*0.2;
-    p.y+=(p.ty-p.y)*0.08;
+    p.x+=(p.tx-p.x)*.2;
+    p.y+=(p.ty-p.y)*.08;
     ctx.fillStyle="#fff";
     ctx.fillRect(p.x,p.y,3,3);
   });
   requestAnimationFrame(animate);
 }
 
-// 页面逻辑
+// ===== 页面逻辑 =====
 const pages=["Hi ","祝你","生日快乐","Happy Birthday","3","2","1"];
 let idx=0;
 
@@ -232,26 +221,25 @@ function start(){
   page1.classList.add("hidden");
   page2.classList.remove("hidden");
   showSquares=false;
-
-
   next();
 }
 
 function next(){
-  if(idx>pages.length-1){showMail();return;}
+  if(idx>pages.length-1){ showSquares=true; showMail(); return; }
   createParticles(pages[idx++]);
   setTimeout(next,1500);
 }
 
-// 邮件数据 9~15
+// ===== 邮件数据 9~15页 =====
 const mails=[
-  {s:"0814",c:"祝皇上生日快乐，之后不会为生活中的一些琐事烦心，事事顺心，也祝皇上幸福安康一直都快快乐乐的"},
   {s:"小鱼",c:"生日快乐！愿你新的一岁，常怀喜悦，万事顺逐，所有美好都如期而至。当然最重要的是一定会赚大钱！！！"},
+  {s:"0814",c:"祝皇上生日快乐，之后不会为生活中的一些琐事烦心，事事顺心，也祝皇上幸福安康一直都快快乐乐的"},
   {s:"镜子",c:"皇上生日快乐！希望准章在新的一岁可以每天开心，赚特别多的钱，万事如意！"},
   {s:"林觺",c:"皇上生日快乐！希望你在新的一岁里，事业如春树渐茂，生活如清茶回甘，有细碎的温暖，也有长久的安宁。更希望你始终被平安保佑，前路少一些坎坷，心中多一些晴朗。岁岁欢喜，万事皆宜。"},
   {s:"大米饭",c:"祝丫头新的一岁粉丝破万，直播间越来越热闹，没有财富焦虑"},
   {s:"一名来自不愿意透露姓名的不知名植物",c:"祝丫头新的一岁天天开心，直播顺利，找工作也是不用愁，等咱攒够米了再补生日礼物。"},
-  {s:"小欣",c:"生日快乐！今天你最大，有什么吩咐尽管说~（当然平时也听你的）"}
+  {s:"小欣",c:"生日快乐！今天你最大，有什么吩咐尽管说~（当然平时也听你的）"},
+  {s:"柠檬水",c:"祝丫头生日快乐！天天开心，日进斗金！"}
 ];
 
 let mailIndex=0;
@@ -263,8 +251,8 @@ function showMail(){
 }
 
 function loadMail(){
-  sender.innerText=mails[mailIndex].s;
-  content.innerText=mails[mailIndex].c;
+  sender.innerText = mails[mailIndex].s;
+  content.innerText = mails[mailIndex].c;
   mailIcon.classList.remove("hidden");
   mailWindow.classList.add("hidden");
 }
@@ -284,16 +272,17 @@ function nextMail(){
   loadMail();
 }
 
+// ===== 初始化 =====
 createSquares();
 animate();
 
 const bgm = document.getElementById("bgm");
 const ding = document.getElementById("ding");
 
-document.getElementById("soundUnlock").onclick=()=>{
-  bgm.volume=0.6;
-  bgm.currentTime = 36;
-  bgm.play().catch(e=>console.log("播放失败", e));
+document.getElementById("soundUnlock").onclick = ()=>{
+  bgm.volume = 0.6;
+  bgm.currentTime = 36; // 从36秒开始
+  bgm.play().catch(e=>console.log("播放失败",e));
   document.getElementById("soundUnlock").style.display="none";
 };
 </script>
