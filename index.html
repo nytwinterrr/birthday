@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生日快乐 🎂</title>
+
+<style>
+html,body{
+  margin:0;padding:0;
+  width:100%;height:100%;
+  overflow:hidden;
+  font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+  background:linear-gradient(135deg,#f7a7a7,#fbd3d3);
+}
+
+canvas{position:absolute;top:0;left:0;}
+
+.page{
+  position:absolute;
+  width:100%;height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  color:#fff;
+}
+
+.hidden{display:none;}
+
+input,button{
+  padding:10px 18px;
+  border-radius:6px;
+  border:none;
+  font-size:16px;
+}
+
+button{cursor:pointer}
+
+/* ===== 邮件图标 ===== */
+#mailIcon{
+  background:#fff;
+  color:#333;
+  padding:22px 30px;
+  border-radius:18px;
+  text-align:center;
+  box-shadow:0 15px 40px rgba(0,0,0,.25);
+  cursor:pointer;
+  animation:pop .8s ease forwards;
+}
+
+#mailIcon .title{font-size:20px;font-weight:bold}
+#mailIcon .sub{font-size:14px;color:#888;margin-top:6px}
+
+@keyframes pop{
+  from{transform:scale(0);opacity:0}
+  70%{transform:scale(1.1)}
+  to{transform:scale(1);opacity:1}
+}
+
+/* ===== 邮件窗口 ===== */
+#mailWindow{
+  background:#fff;
+  color:#333;
+  padding:35px;
+  border-radius:22px;
+  width:80%;
+  max-width:560px;
+  box-shadow:0 25px 60px rgba(0,0,0,.3);
+  animation:zoom .6s ease forwards;
+}
+
+@keyframes zoom{
+  from{transform:scale(.6);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+
+.mail-content{line-height:1.8;margin-top:14px}
+
+.nextBtn{
+  margin-top:25px;
+  background:#f7a7a7;
+  color:#fff;
+  border-radius:20px;
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<audio id="ding">
+  <source src="https://assets.mixkit.co/sfx/preview/mixkit-message-pop-alert-2354.mp3">
+</audio>
+
+<!-- Page 1 -->
+<div class="page" id="page1">
+  <h2>生日快乐</h2>
+  <input id="nameInput" placeholder="输入名字"><br><br>
+  <button onclick="start()">进入</button>
+</div>
+
+<!-- Page 2 -->
+<div class="page hidden" id="page2"></div>
+
+<!-- Page 9~14 -->
+<div class="page hidden" id="mailPage">
+  <div id="mailIcon" onclick="openMail()">
+    <div class="title">📩 你有邮件可查收</div>
+    <div class="sub">点我打开</div>
+  </div>
+
+  <div id="mailWindow" class="hidden">
+    <h3>📬 新邮件</h3>
+    <p><strong>写信人：</strong><span id="sender"></span></p>
+    <p class="mail-content" id="content"></p>
+    <button class="nextBtn" onclick="nextMail()">下一封</button>
+  </div>
+</div>
+
+<script>
+/* ===== Canvas 方块 ===== */
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;canvas.height=innerHeight;
+
+let squares=[],showSquares=true;
+function createSquares(n=15){
+  squares=[];
+  for(let i=0;i<n;i++){
+    squares.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height,
+      size:30+Math.random()*60,
+      angle:Math.random()*Math.PI,
+      rotate:(Math.random()-.5)*.05,
+      speed:(Math.random()-.5)*.2,
+      alpha:.2+Math.random()*.3
+    });
+  }
+}
+function drawSquares(){
+  squares.forEach(s=>{
+    s.angle+=s.rotate;
+    s.y+=s.speed;
+    if(s.y>canvas.height+30)s.y=-30;
+    if(s.y<-30)s.y=canvas.height+30;
+    ctx.save();
+    ctx.translate(s.x,s.y);
+    ctx.rotate(s.angle);
+    ctx.fillStyle=`rgba(255,210,220,${s.alpha})`;
+    ctx.fillRect(-s.size/2,-s.size/2,s.size,s.size);
+    ctx.restore();
+  });
+}
+
+/* ===== 粒子文字 ===== */
+let particles=[];
+function createParticles(text){
+  particles=[];
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.font="bold 150px Arial";
+  ctx.fillText(text,(canvas.width-ctx.measureText(text).width)/2,canvas.height/2);
+  let data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+  for(let y=0;y<canvas.height;y+=6){
+    for(let x=0;x<canvas.width;x+=6){
+      if(data[(y*canvas.width+x)*4+3]>150){
+        particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,tx:x,ty:y});
+      }
+    }
+  }
+}
+
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(showSquares)drawSquares();
+  particles.forEach(p=>{
+    p.x+=(p.tx-p.x)*.2;
+    p.y+=(p.ty-p.y)*.08;
+    ctx.fillStyle="#fff";
+    ctx.fillRect(p.x,p.y,3,3);
+  });
+  requestAnimationFrame(animate);
+}
+
+/* ===== 页面逻辑 ===== */
+const pages=["Hi ","祝你","生日快乐","Happy Birthday","3","2","1"];
+let idx=0;
+
+function start(){
+  pages[0]="Hi "+(nameInput.value||"你");
+  page1.classList.add("hidden");
+  page2.classList.remove("hidden");
+  showSquares=false;
+  next();
+}
+
+function next(){
+  if(idx>pages.length-1){showMail();return;}
+  createParticles(pages[idx++]);
+  setTimeout(next,1500);
+}
+
+/* ===== 邮件数据 ===== */
+const mails=[
+  {s:"小鱼",c:"生日快乐！愿你新的一岁，常怀喜悦，万事顺逐，所有美好都如期而至。当然最重要的是一定会赚大钱！！！"},
+  {s:"0814",c:"祝皇上生日快乐，之后不会为生活中的一些琐事烦心，事事顺心，也祝皇上幸福安康一直都快快乐乐的"},
+  {s:"镜子",c:"皇上生日快乐！希望准章在新的一岁可以每天开心，赚特别多的钱，万事如意！"},
+  {s:"林觺",c:"皇上生日快乐！希望你在新的一岁里，事业如春树渐茂，生活如清茶回甘，有细碎的温暖，也有长久的安宁。更希望你始终被平安保佑，前路少一些坎坷，心中多一些晴朗。岁岁欢喜，万事皆宜。"},
+  {s:"大米饭",c:"祝丫头新的一岁粉丝破万，直播间越来越热闹，没有财富焦虑"},
+  {s:"一名来自不愿意透露姓名的不知名植物",c:"祝丫头新的一岁天天开心，直播顺利，找工作也是不用愁，等咱攒够米了再补生日礼物。"}
+];
+
+let mailIndex=0;
+
+function showMail(){
+  page2.classList.add("hidden");
+  mailPage.classList.remove("hidden");
+  loadMail();
+}
+
+function loadMail(){
+  sender.innerText=mails[mailIndex].s;
+  content.innerText=mails[mailIndex].c;
+  mailIcon.classList.remove("hidden");
+  mailWindow.classList.add("hidden");
+}
+
+function openMail(){
+  ding.play();
+  mailIcon.classList.add("hidden");
+  mailWindow.classList.remove("hidden");
+}
+
+function nextMail(){
+  mailIndex++;
+  if(mailIndex>=mails.length){
+    alert("所有邮件已查收完毕 💌");
+    return;
+  }
+  loadMail();
+}
+
+createSquares();
+animate();
+</script>
+
+</body>
+</html>
